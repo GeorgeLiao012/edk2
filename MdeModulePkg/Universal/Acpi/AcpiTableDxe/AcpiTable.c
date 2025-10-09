@@ -41,11 +41,15 @@ InitializeAcpiTableDxe (
   EFI_ACPI_TABLE_INSTANCE  *PrivateData;
 
   //
-  // Initialize our protocol
+  // Initialize ACPI Table instance
   //
   PrivateData = AllocateZeroPool (sizeof (EFI_ACPI_TABLE_INSTANCE));
-  ASSERT (PrivateData);
-  PrivateData->Signature = EFI_ACPI_TABLE_SIGNATURE;
+  if (PrivateData != NULL) {
+    PrivateData->Signature = EFI_ACPI_TABLE_SIGNATURE;
+  } else {
+    ASSERT (PrivateData);
+    return EFI_OUT_OF_RESOURCES;
+  }
 
   //
   // Call all constructors per produced protocols
@@ -56,15 +60,15 @@ InitializeAcpiTableDxe (
     return EFI_LOAD_ERROR;
   }
 
+  mPrivateData = PrivateData;
   //
   // Install ACPI Table protocol
   //
   if (FeaturePcdGet (PcdInstallAcpiSdtProtocol)) {
-    mPrivateData = PrivateData;
     Status       = gBS->InstallMultipleProtocolInterfaces (
                           &mHandle,
                           &gEfiAcpiTableProtocolGuid,
-                          &PrivateData->AcpiTableProtocol,
+                          &mPrivateData->AcpiTableProtocol,
                           &gEfiAcpiSdtProtocolGuid,
                           &mPrivateData->AcpiSdtProtocol,
                           NULL
@@ -73,7 +77,7 @@ InitializeAcpiTableDxe (
     Status = gBS->InstallMultipleProtocolInterfaces (
                     &mHandle,
                     &gEfiAcpiTableProtocolGuid,
-                    &PrivateData->AcpiTableProtocol,
+                    &mPrivateData->AcpiTableProtocol,
                     NULL
                     );
   }
